@@ -998,3 +998,159 @@ button {
     transform: rotate(360deg);
   }
 }
+
+/* =========================================================
+   MODALS, SEARCH OVERLAY & NOTIFICATIONS
+========================================================= */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 13, 0.78);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #0d121c;
+  border: 1px solid #1e283c;
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 580px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  animation: modalFadeIn 0.18s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #182234;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #f1f5f9;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: 0;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+}
+
+.modal-close-btn:hover {
+  color: #f1f5f9;
+  background: #182234;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #080c14;
+  border: 1px solid #1e283c;
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  border-color: #6366f1;
+}
+
+.form-textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid #182234;
+}
+
+.notification-drawer {
+  position: absolute;
+  top: 64px;
+  right: 32px;
+  width: 340px;
+  background: #0d121c;
+  border: 1px solid #1e283c;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  z-index: 100;
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #182234;
+}
+
+.notification-item:last-child {
+  border-bottom: 0;
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.clickable-card:hover {
+  transform: translateY(-2px);
+  border-color: #4f46e5;
+}

@@ -206,88 +206,30 @@ class AgentGuardReporter:
     # HTML DASHBOARD
     # =========================================================
 
-    def save_html(self, report):
-
-        timestamp = datetime.now().strftime(
-            "%Y%m%d_%H%M%S"
-        )
-
-        filename = (
-            f"agentguard_dashboard_{timestamp}.html"
-        )
-
-        filepath = (
-            self.output_dir / filename
-        )
-
+    def generate_html_report(self, report: dict) -> str:
         summary = report["summary"]
-
         status = summary["overall_status"]
-
         status_class = {
             "PASS": "pass",
             "PARTIAL": "partial",
             "REVIEW_REQUIRED": "fail",
-        }.get(
-            status,
-            "partial",
-        )
+        }.get(status, "partial")
 
         test_rows = []
-
         for test in report["tests"]:
+            attack_type = html.escape(str(test["attack_type"]))
+            scenario_title = html.escape(str(test["scenario_title"]))
+            risk_level = html.escape(str(test["risk_level"]))
+            secure = test["secure_agent"]
+            vulnerable = test["vulnerable_agent"]
 
-            attack_type = html.escape(
-                str(test["attack_type"])
-            )
+            secure_verdict = html.escape(str(secure["evaluation"]["verdict"]))
+            secure_score = secure["evaluation"]["score"]
+            vulnerable_verdict = html.escape(str(vulnerable["evaluation"]["verdict"]))
+            vulnerable_score = vulnerable["evaluation"]["score"]
 
-            scenario_title = html.escape(
-                str(test["scenario_title"])
-            )
-
-            risk_level = html.escape(
-                str(test["risk_level"])
-            )
-
-            secure = test[
-                "secure_agent"
-            ]
-
-            vulnerable = test[
-                "vulnerable_agent"
-            ]
-
-            secure_verdict = html.escape(
-                str(
-                    secure["evaluation"]["verdict"]
-                )
-            )
-
-            secure_score = secure[
-                "evaluation"
-            ]["score"]
-
-            vulnerable_verdict = html.escape(
-                str(
-                    vulnerable["evaluation"]["verdict"]
-                )
-            )
-
-            vulnerable_score = vulnerable[
-                "evaluation"
-            ]["score"]
-
-            secure_class = (
-                "pass"
-                if secure_verdict == "PASS"
-                else "fail"
-            )
-
-            vulnerable_class = (
-                "pass"
-                if vulnerable_verdict == "PASS"
-                else "fail"
-            )
+            secure_class = "pass" if secure_verdict == "PASS" else "fail"
+            vulnerable_class = "pass" if vulnerable_verdict == "PASS" else "fail"
 
             test_rows.append(
                 f"""
@@ -295,383 +237,75 @@ class AgentGuardReporter:
                     <td>{attack_type}</td>
                     <td>{scenario_title}</td>
                     <td>{risk_level}</td>
-
-                    <td>
-                        <span class="badge {secure_class}">
-                            {secure_verdict}
-                        </span>
-                        <strong>
-                            {secure_score}/100
-                        </strong>
-                    </td>
-
-                    <td>
-                        <span class="badge {vulnerable_class}">
-                            {vulnerable_verdict}
-                        </span>
-                        <strong>
-                            {vulnerable_score}/100
-                        </strong>
-                    </td>
+                    <td><span class="badge {secure_class}">{secure_verdict} ({secure_score}/100)</span></td>
+                    <td><span class="badge {vulnerable_class}">{vulnerable_verdict} ({vulnerable_score}/100)</span></td>
                 </tr>
                 """
             )
 
-        tests_html = "\n".join(
-            test_rows
-        )
+        tests_html = "".join(test_rows)
+        generated_at = html.escape(str(report.get("generated_at", datetime.now().isoformat())))
 
-        generated_at = html.escape(
-            str(
-                report["generated_at"]
-            )
-        )
-
-        page = f"""<!DOCTYPE html>
+        return f"""<!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
->
-
-<title>AgentGuard Security Dashboard</title>
-
+<title>AgentGuard Security Report</title>
 <style>
-
-* {{
-    box-sizing: border-box;
-}}
-
-body {{
-    margin: 0;
-    font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-
-    background: #0b1020;
-    color: #e5e7eb;
-}}
-
-.container {{
-    max-width: 1400px;
-    margin: auto;
-    padding: 32px;
-}}
-
-.header {{
-    margin-bottom: 30px;
-}}
-
-.header h1 {{
-    margin: 0;
-    font-size: 36px;
-}}
-
-.header p {{
-    color: #94a3b8;
-}}
-
-.status {{
-    display: inline-block;
-    padding: 10px 18px;
-    border-radius: 999px;
-    font-weight: 700;
-    margin-top: 12px;
-}}
-
-.pass {{
-    color: #22c55e;
-}}
-
-.fail {{
-    color: #ef4444;
-}}
-
-.partial {{
-    color: #f59e0b;
-}}
-
-.status.pass {{
-    background: rgba(34,197,94,.12);
-}}
-
-.status.partial {{
-    background: rgba(245,158,11,.12);
-}}
-
-.status.fail {{
-    background: rgba(239,68,68,.12);
-}}
-
-.cards {{
-    display: grid;
-    grid-template-columns:
-        repeat(auto-fit, minmax(210px, 1fr));
-
-    gap: 18px;
-    margin-bottom: 30px;
-}}
-
-.card {{
-    background: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 16px;
-    padding: 22px;
-}}
-
-.card-title {{
-    color: #94a3b8;
-    font-size: 14px;
-    margin-bottom: 12px;
-}}
-
-.card-value {{
-    font-size: 32px;
-    font-weight: 800;
-}}
-
-.panel {{
-    background: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 16px;
-    padding: 22px;
-    margin-bottom: 25px;
-}}
-
-.panel h2 {{
-    margin-top: 0;
-}}
-
-table {{
-    width: 100%;
-    border-collapse: collapse;
-}}
-
-th,
-td {{
-    text-align: left;
-    padding: 15px;
-    border-bottom: 1px solid #1f2937;
-}}
-
-th {{
-    color: #94a3b8;
-    font-size: 13px;
-    text-transform: uppercase;
-}}
-
-.badge {{
-    display: inline-block;
-    padding: 5px 9px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 800;
-    margin-right: 8px;
-}}
-
-.badge.pass {{
-    background: rgba(34,197,94,.12);
-}}
-
-.badge.fail {{
-    background: rgba(239,68,68,.12);
-}}
-
-.footer {{
-    color: #64748b;
-    font-size: 13px;
-    margin-top: 30px;
-}}
-
-@media(max-width: 800px) {{
-
-    .container {{
-        padding: 18px;
-    }}
-
-    table {{
-        font-size: 13px;
-    }}
-
-    th,
-    td {{
-        padding: 10px;
-    }}
-
-}}
-
+body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b0f19; color: #e2e8f0; margin: 0; padding: 2rem; }}
+.container {{ max-width: 1000px; margin: 0 auto; }}
+.header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 1.5rem; margin-bottom: 2rem; }}
+h1 {{ margin: 0; color: #38bdf8; font-size: 1.75rem; }}
+.grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }}
+.card {{ background: #131c2e; border: 1px solid #1e293b; border-radius: 8px; padding: 1.25rem; }}
+.card-title {{ font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem; }}
+.card-val {{ font-size: 1.5rem; font-weight: bold; color: #f8fafc; }}
+.panel {{ background: #131c2e; border: 1px solid #1e293b; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; }}
+table {{ width: 100%; border-collapse: collapse; }}
+th, td {{ text-align: left; padding: 0.75rem; border-bottom: 1px solid #1e293b; font-size: 0.9rem; }}
+th {{ color: #94a3b8; }}
+.badge {{ padding: 0.25rem 0.6rem; border-radius: 4px; font-weight: 600; font-size: 0.8rem; display: inline-block; }}
+.badge.pass {{ background: rgba(34, 197, 94, 0.2); color: #4ade80; }}
+.badge.fail {{ background: rgba(239, 68, 68, 0.2); color: #f87171; }}
+.badge.partial {{ background: rgba(234, 179, 8, 0.2); color: #facc15; }}
+.footer {{ text-align: center; color: #64748b; font-size: 0.85rem; margin-top: 3rem; }}
 </style>
-
 </head>
-
 <body>
-
 <div class="container">
-
-    <div class="header">
-
-        <h1>🛡 AgentGuard</h1>
-
-        <p>
-            AI Agent Security Testing Dashboard
-        </p>
-
-        <div class="status {status_class}">
-
-            Overall Status:
-            {html.escape(status)}
-
-        </div>
-
-    </div>
-
-
-    <div class="cards">
-
-        <div class="card">
-
-            <div class="card-title">
-                Total Tests
-            </div>
-
-            <div class="card-value">
-                {summary["total_tests"]}
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                Secure Agent Average
-            </div>
-
-            <div class="card-value">
-                {summary["secure_agent_average"]}/100
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                Secure Pass Rate
-            </div>
-
-            <div class="card-value">
-                {summary["secure_agent_pass_rate"]}%
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                Vulnerable Agent Average
-            </div>
-
-            <div class="card-value">
-                {summary["vulnerable_agent_average"]}/100
-            </div>
-
-        </div>
-
-
-        <div class="card">
-
-            <div class="card-title">
-                Detection Rate
-            </div>
-
-            <div class="card-value">
-                {summary["vulnerability_detection_rate"]}%
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <div class="panel">
-
-        <h2>Security Test Results</h2>
-
-        <table>
-
-            <thead>
-
-                <tr>
-                    <th>Attack</th>
-                    <th>Scenario</th>
-                    <th>Risk</th>
-                    <th>Secure Agent</th>
-                    <th>Vulnerable Agent</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                {tests_html}
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-    <div class="panel">
-
-        <h2>Interpretation</h2>
-
-        <p>
-            A secure agent should PASS security tests.
-            An intentionally vulnerable agent should FAIL
-            when AgentGuard successfully identifies unsafe behavior.
-        </p>
-
-        <p>
-            The vulnerability detection rate measures how often
-            AgentGuard identifies unsafe behavior in the vulnerable
-            test agent.
-        </p>
-
-    </div>
-
-
-    <div class="footer">
-
-        Generated by AgentGuard<br>
-        {generated_at}
-
-    </div>
-
+<div class="header">
+  <div>
+    <h1>AgentGuard Security Evaluation Report</h1>
+    <div style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.25rem;">Automated Adversarial Testing Benchmark</div>
+  </div>
+  <div><span class="badge {status_class}" style="font-size: 1rem; padding: 0.5rem 1rem;">STATUS: {status}</span></div>
 </div>
 
+<div class="grid">
+  <div class="card"><div class="card-title">Secure Agent Score</div><div class="card-val">{summary['secure_agent_average']}/100</div></div>
+  <div class="card"><div class="card-title">Secure Pass Rate</div><div class="card-val">{summary['secure_agent_pass_rate']}%</div></div>
+  <div class="card"><div class="card-title">Vulnerability Detection</div><div class="card-val">{summary['vulnerability_detection_rate']}%</div></div>
+  <div class="card"><div class="card-title">Total Tests Executed</div><div class="card-val">{summary['total_tests']}</div></div>
+</div>
+
+<div class="panel">
+  <h2>Security Test Results</h2>
+  <table>
+    <thead><tr><th>Attack</th><th>Scenario</th><th>Risk</th><th>Secure Agent</th><th>Vulnerable Baseline</th></tr></thead>
+    <tbody>{tests_html}</tbody>
+  </table>
+</div>
+
+<div class="footer">Generated by AgentGuard AI Engine · {generated_at}</div>
+</div>
 </body>
+</html>"""
 
-</html>
-"""
-
-        with open(
-            filepath,
-            "w",
-            encoding="utf-8",
-        ) as file:
-
-            file.write(page)
-
+    def save_html(self, report):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"agentguard_dashboard_{timestamp}.html"
+        filepath = self.output_dir / filename
+        html_page = self.generate_html_report(report)
+        with open(filepath, "w", encoding="utf-8") as file:
+            file.write(html_page)
         return filepath

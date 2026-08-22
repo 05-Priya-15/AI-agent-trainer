@@ -1,744 +1,168 @@
-# AgentGuard
+# 🛡️ AgentGuard
 
-**AI Agent Security Testing & Evaluation Framework**
+**AI Agent Security Testing, Benchmarking & Active Defense Platform**
 
-AgentGuard is an AI-agent security testing and evaluation platform designed to help developers identify weaknesses in AI-agent systems through controlled adversarial security scenarios.
-
-The project combines a **Python-based AI security engine** with a **React + TypeScript + Vite frontend** that provides a dashboard for viewing agent reliability, test results, failures, and security analysis.
+AgentGuard is an enterprise-grade AI security testing and evaluation framework designed to help developers identify vulnerabilities, evaluate agent resilience against adversarial attacks, and protect LLM applications in real-time with an active defense guardrail proxy.
 
 ---
 
-## Features
+## 🌟 Key Features
 
-- 🤖 AI-powered security scenario generation
-- 🛡️ AI-agent security testing
-- 🧪 Automated adversarial test execution
-- 📊 Security evaluation and reliability scoring
-- 📝 Automated security reporting
-- ⚔️ Configurable attack scenarios
-- 🔎 Failure analysis and execution traces
-- ⚛️ React + TypeScript frontend
-- ⚡ Vite development environment
-- 🔧 Modular Python AI engine
-- 🔐 Environment-variable based API configuration
-- ⚙️ GitHub Actions workflow support
+- 🤖 **Live Adversarial Testing**: Real synthetic attack scenario generation powered by Google Gemini (`gemini-3.6-flash`).
+- 🛡️ **Active Defense Guardrail Shield**: Real-time pre-inference threat scanning, prompt injection neutralization, and output secret/PII redaction.
+- 🎯 **Custom AI Agent Benchmarking**: Benchmark any custom AI agent using custom system instructions or external HTTP/webhook endpoints.
+- ⚔️ **OWASP Top 10 for LLMs Coverage**: 10 comprehensive security vectors (Direct Prompt Injection, Indirect Injection, Jailbreaks, Credential Leakage, Instruction Hijacking, Unauthorized Tool Invocations, System Prompt Extraction, Insecure Output Handling, DoS Loops, and Hallucination Exploitation).
+- ⚡ **High-Speed Parallel Execution**: Concurrent test runner that evaluates full benchmark suites in ~1.5 to 3 seconds.
+- 💾 **SQLite Database Persistence**: All benchmark runs, evaluation traces, and shield telemetry are stored in `agentguard.db`.
+- 📊 **Interactive Dashboard**: Modern React + TypeScript + Vite UI with real-time score rings, failure trace visualizers, category breakdowns, and exportable reports (HTML/JSON).
+- 🚀 **1-Click Free Deployment**: Deployment-ready for Render, Vercel, Hugging Face Spaces, Railway, or Docker.
 
 ---
 
-## Architecture
-
-AgentGuard is organized into two main layers:
+## 🏗️ System Architecture
 
 ```text
-┌─────────────────────────────────────────────┐
-│              AgentGuard Frontend            │
-│          React + TypeScript + Vite          │
-│                                             │
-│  Dashboard │ Agents │ Test Suites │        │
-│  Failures  │ Settings                     │
-└──────────────────────┬──────────────────────┘
-                       │
-                       │
-┌──────────────────────▼──────────────────────┐
-│             AgentGuard AI Engine             │
-│                    Python                    │
-│                                             │
-│  Scenario Generator                          │
-│  Attack Types                                │
-│  Agent Runner                                │
-│  Evaluator                                   │
-│  Reporter                                    │
-│  Test Runner                                 │
-│  AI Model Integration                        │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    AgentGuard React UI                      │
+│                  React + TypeScript + Vite                  │
+│                                                             │
+│  Dashboard │ Agents Manager │ Test Suites │ Failure Center │
+└──────────────────────────────┬──────────────────────────────┘
+                               │  REST API / Webhooks
+┌──────────────────────────────▼──────────────────────────────┐
+│                    AgentGuard FastAPI Server                │
+│                                                             │
+│  ┌───────────────────────┐      ┌─────────────────────────┐ │
+│  │   Active Guardrail    │      │    Parallel Adversarial │ │
+│  │   Shield Proxy        │      │    Test Benchmark       │ │
+│  │   (/api/shield/proxy) │      │    (/api/tests/suite)   │ │
+│  └───────────┬───────────┘      └────────────┬────────────┘ │
+│              │                               │              │
+│  ┌───────────▼───────────┐      ┌────────────▼────────────┐ │
+│  │   Google Gemini SDK   │      │   SQLite Persistence    │ │
+│  │   (gemini-3.6-flash)  │      │   (agentguard.db)       │ │
+│  └───────────────────────┘      └─────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-The frontend provides the user-facing security dashboard, while the Python engine handles security scenario generation, agent execution, evaluation, and reporting.
-
 ---
 
-# Project Structure
+## 🚀 Quick Start (Local Setup)
 
-```text
-AI-agent-trainer/
-│
-├── .github/
-│   └── workflows/
-│       └── agentguard.yml
-│
-├── ai_engine/
-│   ├── __init__.py
-│   ├── agent_runner.py
-│   ├── attack_types.py
-│   ├── evaluator.py
-│   ├── models.py
-│   ├── reporter.py
-│   ├── scenario_generator.py
-│   └── test_runner.py
-│
-├── public/
-│   ├── favicon.svg
-│   └── icons.svg
-│
-├── src/
-│   ├── assets/
-│   ├── App.tsx
-│   ├── App.css
-│   ├── index.css
-│   └── main.tsx
-│
-├── reports/
-│   └── # Generated reports; ignored by Git
-│
-├── .env
-├── .gitignore
-├── eslint.config.js
-├── index.html
-├── main.py
-├── package.json
-├── package-lock.json
-├── requirements.txt
-├── tsconfig.json
-├── tsconfig.app.json
-├── tsconfig.node.json
-└── vite.config.ts
-```
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+
+- Google Gemini API Key
 
-> `.env`, `reports/`, `node_modules/`, `dist/`, and Python virtual-environment files are intended to remain outside source control.
-
----
-
-# Python AI Security Engine
-
-The Python backend is responsible for the core AgentGuard security-testing workflow.
-
-## Core Components
-
-| File | Purpose |
-|---|---|
-| `main.py` | Main application entry point |
-| `ai_engine/scenario_generator.py` | Generates AI security-testing scenarios |
-| `ai_engine/attack_types.py` | Defines attack and security scenario types |
-| `ai_engine/agent_runner.py` | Executes scenarios against an AI agent |
-| `ai_engine/evaluator.py` | Evaluates agent behavior and security results |
-| `ai_engine/reporter.py` | Generates security reports |
-| `ai_engine/test_runner.py` | Coordinates security-test execution |
-| `ai_engine/models.py` | AI model integration and configuration |
-| `requirements.txt` | Python dependencies |
-
----
-
-# Backend Requirements
-
-The backend requires:
-
-- Python 3.10 or newer
-- Git
-- An API key for the configured AI model provider
-
----
-
-# Backend Installation
-
-Clone the repository:
-
+### 2. Backend Setup
 ```bash
-git clone https://github.com/05-Priya-15/AI-agent-trainer.git
+# Navigate to project directory
 cd AI-agent-trainer
-```
 
-Create a Python virtual environment.
-
-## Windows
-
-```powershell
+# Create and activate Python virtual environment
 python -m venv .venv
-```
-
-Activate it:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-Install dependencies:
-
-```powershell
-pip install -r requirements.txt
-```
-
-## Linux/macOS
-
-```bash
-python3 -m venv .venv
+# On Windows:
+.\.venv\Scripts\activate
+# On macOS/Linux:
 source .venv/bin/activate
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env and set your GEMINI_API_KEY
 ```
 
----
-
-# Environment Configuration
-
-AgentGuard uses environment variables for API credentials.
-
-Create a local `.env` file in the project root.
-
-Example:
-
-```text
-YOUR_API_KEY_VARIABLE=your_api_key_here
-```
-
-Use the environment-variable name required by the configured AI model implementation.
-
-**Never commit API keys or other secrets to GitHub.**
-
-The `.gitignore` file is configured to exclude environment files:
-
-```text
-.env
-.env.*
-```
-
----
-
-# Running the Backend
-
-Activate the Python virtual environment and run:
-
-```powershell
-python main.py
-```
-
-The backend security workflow can include:
-
-1. Generating an adversarial security scenario
-2. Selecting an attack type
-3. Executing the scenario
-4. Evaluating the agent's behavior
-5. Generating a security report
-
-Generated reports are stored locally in:
-
-```text
-reports/
-```
-
-The `reports/` directory is excluded from Git.
-
----
-
-# Frontend
-
-The AgentGuard frontend is a **React + TypeScript + Vite** application located at the repository root.
-
-The frontend provides the AgentGuard security dashboard, including:
-
-- Agent overview
-- Reliability score
-- Security test statistics
-- Test categories
-- Latest test results
-- Failure analysis
-- Execution traces
-- AI-generated analysis
-- Navigation between dashboard sections
-
----
-
-# Frontend Technology Stack
-
-| Technology | Purpose |
-|---|---|
-| React | User interface |
-| TypeScript | Type-safe frontend development |
-| Vite | Development server and build tooling |
-| ESLint | Code quality and linting |
-| Lucide React | UI icons |
-| HMR | Fast development feedback |
-
----
-
-# Frontend Requirements
-
-The frontend requires:
-
-- Node.js
-- npm
-
-Verify the installation:
-
-```powershell
-node --version
-npm --version
-```
-
----
-
-# Frontend Installation
-
-Because the React application is located at the repository root, run:
-
-```powershell
+### 3. Frontend Setup
+```bash
+# Install node dependencies
 npm install
+
+# Build static assets
+npm run build
 ```
 
-The repository includes `package-lock.json` so dependencies can be installed consistently.
+### 4. Run the Application
 
----
+**Option A: Single-Service Mode (FastAPI serving React):**
+```bash
+uvicorn api:app --reload --port 8000
+```
+*Open `http://localhost:8000` in your browser.*
 
-# Start the Frontend
+**Option B: Separate Dev Mode:**
+```bash
+# Terminal 1: Backend
+uvicorn api:app --reload --port 8000
 
-Run the development server:
-
-```powershell
+# Terminal 2: Frontend
 npm run dev
 ```
-
-Vite will start the development environment with Hot Module Replacement (HMR).
-
-Open the local URL displayed by Vite in your browser.
+*Open `http://localhost:5173` in your browser.*
 
 ---
 
-# Frontend Linting
+## 🌐 1-Click Free Deployment Guide
 
-Run ESLint:
+### Deploy on Render.com (Recommended — 100% Free All-in-One)
 
-```powershell
-npm run lint
-```
-
-The project uses TypeScript-aware ESLint rules to identify common code-quality issues.
-
----
-
-# Frontend Production Build
-
-Create a production build:
-
-```powershell
-npm run build
-```
-
-The build process performs TypeScript checking and creates an optimized Vite production bundle.
-
-The generated `dist/` directory is a build artifact and should not be committed unless the project specifically requires deployment artifacts in Git.
-
-To preview the production build locally:
-
-```powershell
-npm run preview
-```
+1. Push this repository to GitHub:
+   ```bash
+   git add .
+   git commit -m "Deploy AgentGuard"
+   git push origin main
+   ```
+2. Log into [Render.com](https://render.com) and click **New +** $\rightarrow$ **Web Service**.
+3. Select your repository.
+4. Settings:
+   - **Environment**: `Python 3`
+   - **Build Command**: `npm install && npm run build && pip install -r requirements.txt`
+   - **Start Command**: `uvicorn api:app --host 0.0.0.0 --port $PORT`
+   - **Plan**: `Free`
+5. Under **Environment Variables**, add:
+   - `GEMINI_API_KEY`: `your_gemini_api_key_here`
+   - `MODEL_NAME`: `gemini-3.6-flash`
+6. Click **Create Web Service**. Your live app will be accessible at `https://your-app.onrender.com`!
 
 ---
 
-# Frontend Development
+## 📡 REST API Reference
 
-The main frontend application is located in:
-
-```text
-src/App.tsx
-```
-
-Global styling is located in:
-
-```text
-src/index.css
-```
-
-Application-specific styling is located in:
-
-```text
-src/App.css
-```
-
-The frontend entry point is:
-
-```text
-src/main.tsx
-```
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/health` | `GET` | System status, model configuration, and database connection |
+| `/api/tests/suite` | `POST` | Executes parallel multi-attack benchmark suite |
+| `/api/tests/run` | `POST` | Executes single attack scenario test |
+| `/api/scenarios/generate` | `POST` | Generates synthetic adversarial attack scenario |
+| `/api/agents` | `GET`, `POST` | List all agents / Register new custom agent |
+| `/api/agents/{id}` | `GET`, `DELETE` | Retrieve or delete a custom agent |
+| `/api/attacks` | `GET` | Catalog of 10 supported OWASP LLM attack vectors |
+| `/api/shield/inspect` | `POST` | Real-time pre-inference threat scanning |
+| `/api/shield/proxy` | `POST` | End-to-end shielded agent chat proxy |
+| `/api/shield/stats` | `GET` | Real-time Guardrail Shield telemetry & threat metrics |
+| `/api/history/suites` | `GET` | List saved test suite runs |
+| `/api/history/suites/{id}` | `GET` | Detailed test run with full evaluations |
+| `/api/reports/{id}/export` | `GET` | Export report as JSON or downloadable HTML report |
 
 ---
 
-# React Compiler
+## 🧪 CLI Mode
 
-The React Compiler is not enabled by default in this project.
+AgentGuard can also be executed directly via command line:
 
-If React Compiler support is added in the future, refer to the official React documentation:
+```bash
+# Run full security test suite
+python main.py --suite full
 
-https://react.dev/learn/react-compiler/installation
+# Run specific attack test
+python main.py --attack "prompt injection"
 
----
-
-# ESLint
-
-The frontend uses ESLint for code-quality checks.
-
-The ESLint configuration is located at:
-
-```text
-eslint.config.js
-```
-
-Run:
-
-```powershell
-npm run lint
-```
-
-before submitting frontend changes.
-
----
-
-# Security Testing
-
-AgentGuard is designed for controlled and authorized security testing of AI-agent systems.
-
-Security testing areas can include:
-
-- Prompt injection
-- Indirect prompt injection
-- Adversarial instructions
-- Unauthorized tool usage
-- Tool permission escalation
-- Unsafe agent behavior
-- Instruction-following weaknesses
-- Privacy and PII protection
-- Security-policy violations
-- Agent response evaluation
-
-The available attack scenarios are defined by the implementation in:
-
-```text
-ai_engine/attack_types.py
+# Export report to JSON
+python main.py --suite full --json
 ```
 
 ---
 
-# Example Security Scenario
-
-An example scenario may evaluate whether an AI agent follows malicious instructions embedded in user-controlled content.
-
-For example:
-
-```text
-User message
-     │
-     ▼
-Malicious instruction
-     │
-     ▼
-AI Agent
-     │
-     ├── Safe handling
-     │       └── Reject / ignore malicious instruction
-     │
-     └── Unsafe handling
-             └── Execute unauthorized action
-```
-
-AgentGuard can evaluate the resulting behavior and identify potential weaknesses.
-
----
-
-# Evaluation
-
-The evaluation system analyzes agent behavior during security tests.
-
-The primary evaluation logic is implemented in:
-
-```text
-ai_engine/evaluator.py
-```
-
-The evaluator can be used to determine whether the tested agent:
-
-- Followed unsafe instructions
-- Respected security policies
-- Used tools appropriately
-- Protected sensitive information
-- Rejected adversarial instructions
-- Behaved according to expected constraints
-
----
-
-# Reporting
-
-Security-test results can be converted into reports through:
-
-```text
-ai_engine/reporter.py
-```
-
-Generated reports are stored locally in:
-
-```text
-reports/
-```
-
-Generated runtime reports are intentionally excluded from Git to keep the repository clean.
-
----
-
-# Test Runner
-
-AgentGuard provides test orchestration through:
-
-```text
-ai_engine/test_runner.py
-```
-
-The test runner coordinates security scenarios and evaluation.
-
-A typical workflow is:
-
-```text
-Generate Scenario
-       │
-       ▼
-Execute Test
-       │
-       ▼
-Capture Agent Behavior
-       │
-       ▼
-Evaluate Result
-       │
-       ▼
-Generate Report
-```
-
----
-
-# GitHub Actions
-
-The repository includes a GitHub Actions workflow:
-
-```text
-.github/workflows/agentguard.yml
-```
-
-GitHub Actions can be used to automate project checks and testing.
-
-Sensitive credentials should be stored using GitHub repository secrets.
-
-**Do not place API keys directly inside workflow files.**
-
----
-
-# Git Configuration
-
-The repository intentionally ignores local and generated files such as:
-
-```text
-.venv/
-venv/
-env/
-
-node_modules/
-dist/
-
-__pycache__/
-*.py[cod]
-
-.env
-.env.*
-
-reports/
-
-.vscode/
-.idea/
-
-.DS_Store
-Thumbs.db
-```
-
-This prevents local environments, secrets, generated reports, and build artifacts from being accidentally committed.
-
----
-
-# Development Workflow
-
-Check repository status:
-
-```powershell
-git status
-```
-
-Stage changes:
-
-```powershell
-git add .
-```
-
-Create a commit:
-
-```powershell
-git commit -m "Update AgentGuard"
-```
-
-Push changes:
-
-```powershell
-git push origin main
-```
-
----
-
-# Recommended Pre-Submission Checks
-
-Before submitting the project, run the following checks.
-
-## 1. Check Git status
-
-```powershell
-git status
-```
-
-Make sure there are no unintended files.
-
-## 2. Install Python dependencies
-
-```powershell
-pip install -r requirements.txt
-```
-
-## 3. Test the Python backend
-
-```powershell
-python main.py
-```
-
-## 4. Install frontend dependencies
-
-```powershell
-npm install
-```
-
-## 5. Run ESLint
-
-```powershell
-npm run lint
-```
-
-## 6. Create the production build
-
-```powershell
-npm run build
-```
-
-## 7. Check Git status again
-
-```powershell
-git status
-```
-
-Confirm that `node_modules/` and `dist/` are ignored.
-
----
-
-# Submission Checklist
-
-Before submitting AgentGuard:
-
-- [ ] `main.py` runs successfully
-- [ ] Python dependencies install successfully
-- [ ] AI model configuration works
-- [ ] Security scenarios can be generated
-- [ ] Agent execution works
-- [ ] Evaluation works
-- [ ] Reports are generated correctly
-- [ ] `npm install` completes successfully
-- [ ] `npm run lint` passes
-- [ ] `npm run build` passes
-- [ ] Frontend launches successfully
-- [ ] `.env` is not committed
-- [ ] API keys are not committed
-- [ ] `.venv/` is ignored
-- [ ] `node_modules/` is ignored
-- [ ] `dist/` is ignored
-- [ ] `reports/` is ignored
-- [ ] GitHub Actions workflow is present
-- [ ] README matches the actual repository structure
-- [ ] Git working tree is clean after committing
-
----
-
-# Roadmap
-
-Potential future improvements include:
-
-- Expanded AI-agent attack scenarios
-- Additional security evaluation metrics
-- More detailed reliability scoring
-- Historical test-result tracking
-- Automated CI security testing
-- Additional AI model providers
-- Configurable security-testing profiles
-- Improved report visualization
-- Real-time frontend/backend integration
-- Security-test result dashboards
-- Agent comparison across versions
-- Exportable security reports
-
----
-
-# Project Status
-
-**Status: Active Development**
-
-AgentGuard is an AI-agent security testing and evaluation platform combining a Python AI security engine with a modern React frontend.
-
-The project is intended to provide developers with a structured way to generate, execute, evaluate, and report adversarial tests against AI-agent systems.
-
----
-
-# Responsible Use
-
-AgentGuard is intended for **authorized security testing, defensive development, and research**.
-
-Only test AI agents, applications, APIs, and infrastructure that you own or have explicit permission to assess.
-
-Do not use AgentGuard to perform unauthorized attacks against third-party systems.
-
-When working with credentials, test data, or reports:
-
-- Keep secrets outside source control.
-- Use environment variables or secure secret storage.
-- Never commit API keys.
-- Avoid storing sensitive personal information in test data.
-- Use controlled testing environments whenever possible.
-- Review generated security scenarios before executing them against external systems.
-
----
-
-# Disclaimer
-
-AgentGuard is a security testing and research tool.
-
-Automated evaluation results should not automatically be treated as definitive security findings. Results should be reviewed by an appropriately qualified developer or security professional.
-
-The developers and contributors are not responsible for unauthorized use of this software.
-
-Only perform security testing against systems for which you have explicit authorization.
-
----
-
-# License
-
-AgentGuard is licensed under the [MIT License](LICENSE).
-
-Copyright (c) 2026 05-Priya-15.
-
----
-
-# Repository
-
-GitHub repository:
-
-https://github.com/05-Priya-15/AI-agent-trainer.git
-
----
-
-**AgentGuard — Test AI Agents Before They Fail.**
+## 📜 License
+MIT License. Built for hackathons & AI security innovation.
