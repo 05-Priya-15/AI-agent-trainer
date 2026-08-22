@@ -5,34 +5,30 @@ on:
     branches:
       - main
       - master
-
   pull_request:
     branches:
       - main
       - master
-
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  security:
-
+  security-tests:
     name: AgentGuard AI Security Tests
-
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-
     steps:
-
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: "pip"
+          cache: pip
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
@@ -48,18 +44,18 @@ jobs:
             --fail-on-vulnerability \
             --no-browser
 
-      - name: Upload JSON report
+      - name: Upload JSON security report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: agentguard-json-report
           path: reports/*.json
-          if-no-files-found: warn
+          if-no-files-found: ignore
 
-      - name: Upload HTML dashboard
+      - name: Upload HTML security dashboard
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: agentguard-html-dashboard
           path: reports/*.html
-          if-no-files-found: warn
+          if-no-files-found: ignore
