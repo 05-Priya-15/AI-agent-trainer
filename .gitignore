@@ -21,3 +21,7 @@ reports/
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend
+node_modules/
+dist/

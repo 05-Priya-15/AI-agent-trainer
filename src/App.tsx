@@ -22,13 +22,22 @@ import "./index.css";
 
 type TestStatus = "Passed" | "Failed" | "Running";
 
+type SeverityLevel = "Critical" | "High" | "Medium" | "Low";
+
 interface Test {
   id: number;
   name: string;
   category: string;
-  severity: "Critical" | "High" | "Medium" | "Low";
+  severity: SeverityLevel;
   status: TestStatus;
   duration: string;
+}
+
+interface Failure {
+  title: string;
+  severity: SeverityLevel;
+  description: string;
+  trace: string[];
 }
 
 const tests: Test[] = [
@@ -74,7 +83,7 @@ const tests: Test[] = [
   },
 ];
 
-const failures = [
+const failures: Failure[] = [
   {
     title: "Prompt Injection",
     severity: "Critical",
@@ -122,6 +131,7 @@ function App() {
           <div className="logo-icon">
             <ShieldCheck size={22} />
           </div>
+
           <div>
             <div className="logo-name">AgentGuard</div>
             <div className="logo-subtitle">AI Reliability Platform</div>
@@ -170,6 +180,7 @@ function App() {
         <div className="sidebar-bottom">
           <div className="system-status">
             <span className="status-dot" />
+
             <div>
               <div className="status-title">System operational</div>
               <div className="status-subtitle">All services healthy</div>
@@ -189,11 +200,14 @@ function App() {
           </div>
 
           <div className="topbar-actions">
-            <button className="icon-button">
+            <button className="icon-button" aria-label="Search">
               <Search size={18} />
             </button>
 
-            <button className="icon-button notification">
+            <button
+              className="icon-button notification"
+              aria-label="Notifications"
+            >
               <Bell size={18} />
               <span />
             </button>
@@ -219,17 +233,19 @@ function App() {
   );
 }
 
+interface DashboardProps {
+  running: boolean;
+  runTests: () => void;
+  selectedFailure: number;
+  setSelectedFailure: (index: number) => void;
+}
+
 function Dashboard({
   running,
   runTests,
   selectedFailure,
   setSelectedFailure,
-}: {
-  running: boolean;
-  runTests: () => void;
-  selectedFailure: number;
-  setSelectedFailure: (index: number) => void;
-}) {
+}: DashboardProps) {
   return (
     <div className="content">
       {/* Agent header */}
@@ -251,7 +267,11 @@ function Dashboard({
           </div>
         </div>
 
-        <button className="run-button" onClick={runTests} disabled={running}>
+        <button
+          className="run-button"
+          onClick={runTests}
+          disabled={running}
+        >
           {running ? (
             <>
               <Activity size={17} className="spin" />
@@ -318,7 +338,9 @@ function Dashboard({
               <p>Based on 248 adversarial tests</p>
             </div>
 
-            <button className="more-button">•••</button>
+            <button className="more-button" aria-label="More options">
+              •••
+            </button>
           </div>
 
           <div className="score-content">
@@ -336,23 +358,27 @@ function Dashboard({
               </div>
 
               <p>
-                Your agent is performing significantly better than the previous
-                version.
+                Your agent is performing significantly better than the
+                previous version.
               </p>
 
               <div className="score-comparison">
                 <span>v2.0</span>
+
                 <div className="comparison-bar">
                   <div style={{ width: "68%" }} />
                 </div>
+
                 <strong>68</strong>
               </div>
 
               <div className="score-comparison">
                 <span>v2.1</span>
+
                 <div className="comparison-bar current">
                   <div style={{ width: "92%" }} />
                 </div>
+
                 <strong>92</strong>
               </div>
             </div>
@@ -373,21 +399,25 @@ function Dashboard({
               score={96}
               color="green"
             />
+
             <CategoryBar
               label="Privacy"
               score={94}
               color="green"
             />
+
             <CategoryBar
               label="Reliability"
               score={91}
               color="blue"
             />
+
             <CategoryBar
               label="Tool Safety"
               score={87}
               color="orange"
             />
+
             <CategoryBar
               label="Prompt Injection"
               score={76}
@@ -425,6 +455,7 @@ function Dashboard({
                 <div className="scenario-icon">
                   <FlaskConical size={15} />
                 </div>
+
                 {test.name}
               </div>
 
@@ -478,7 +509,8 @@ function Dashboard({
                     {failure.description}
                   </div>
 
-                  <Severity severity={failure.severity as any} />
+                  {/* Fixed TypeScript issue: removed `as any` */}
+                  <Severity severity={failure.severity} />
                 </div>
 
                 <ChevronRight size={17} />
@@ -514,7 +546,8 @@ function Dashboard({
 
                     <span
                       className={
-                        index === failures[selectedFailure].trace.length - 1
+                        index ===
+                        failures[selectedFailure].trace.length - 1
                           ? "trace-danger"
                           : ""
                       }
@@ -533,10 +566,12 @@ function Dashboard({
 
               <div>
                 <strong>AI Analysis</strong>
+
                 <p>
-                  The agent executed a privileged tool call without satisfying
-                  the required authorization policy. AgentGuard recommends
-                  adding an explicit authorization check before tool execution.
+                  The agent executed a privileged tool call without
+                  satisfying the required authorization policy. AgentGuard
+                  recommends adding an explicit authorization check before
+                  tool execution.
                 </p>
               </div>
             </div>
@@ -553,9 +588,10 @@ function Dashboard({
 
           <div>
             <h3>Generate new adversarial scenarios</h3>
+
             <p>
-              Let AgentGuard automatically discover new ways your agent could
-              fail.
+              Let AgentGuard automatically discover new ways your agent
+              could fail.
             </p>
           </div>
         </div>
@@ -569,17 +605,19 @@ function Dashboard({
   );
 }
 
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
 function NavItem({
   icon,
   label,
   active,
   onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+}: NavItemProps) {
   return (
     <button
       className={`nav-item ${active ? "active" : ""}`}
@@ -591,6 +629,16 @@ function NavItem({
   );
 }
 
+interface StatCardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  suffix: string;
+  trend: string;
+  trendPositive: boolean;
+  color: string;
+}
+
 function StatCard({
   icon,
   label,
@@ -599,15 +647,7 @@ function StatCard({
   trend,
   trendPositive,
   color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  suffix: string;
-  trend: string;
-  trendPositive: boolean;
-  color: string;
-}) {
+}: StatCardProps) {
   return (
     <div className="card stat-card">
       <div className={`stat-icon ${color}`}>{icon}</div>
@@ -627,15 +667,17 @@ function StatCard({
   );
 }
 
+interface CategoryBarProps {
+  label: string;
+  score: number;
+  color: string;
+}
+
 function CategoryBar({
   label,
   score,
   color,
-}: {
-  label: string;
-  score: number;
-  color: string;
-}) {
+}: CategoryBarProps) {
   return (
     <div className="category">
       <div className="category-top">
@@ -656,7 +698,7 @@ function CategoryBar({
 function Severity({
   severity,
 }: {
-  severity: "Critical" | "High" | "Medium" | "Low";
+  severity: SeverityLevel;
 }) {
   return (
     <span className={`severity ${severity.toLowerCase()}`}>
@@ -666,7 +708,11 @@ function Severity({
   );
 }
 
-function Status({ status }: { status: TestStatus }) {
+function Status({
+  status,
+}: {
+  status: TestStatus;
+}) {
   if (status === "Passed") {
     return (
       <span className="test-status passed">
@@ -693,14 +739,22 @@ function Status({ status }: { status: TestStatus }) {
   );
 }
 
-function PlaceholderPage({ page }: { page: string }) {
+function PlaceholderPage({
+  page,
+}: {
+  page: string;
+}) {
   return (
     <div className="placeholder">
       <div className="placeholder-icon">
         <ShieldCheck size={30} />
       </div>
+
       <h2>{page}</h2>
-      <p>This section is ready to connect to the AgentGuard API.</p>
+
+      <p>
+        This section is ready to connect to the AgentGuard API.
+      </p>
     </div>
   );
 }
