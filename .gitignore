@@ -34,5 +34,5 @@ Thumbs.db
 
 # Frontend dependencies and build
 node_modules/
-dist/
 .eslintcache
+

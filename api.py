@@ -115,8 +115,8 @@ class SuiteRequest(BaseModel):
 # HEALTH & SYSTEM STATUS
 # ============================================================
 
-@app.get("/")
-def root():
+@app.get("/api")
+def api_root():
     return {
         "name": "AgentGuard API",
         "status": "running",
@@ -130,6 +130,7 @@ def root():
             "SQLite Database Persistence",
         ],
     }
+
 
 
 @app.get("/api/health")
@@ -434,14 +435,26 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 dist_path = Path(__file__).resolve().parent / "dist"
-if dist_path.exists():
+if (dist_path / "assets").exists():
     app.mount("/assets", StaticFiles(directory=str(dist_path / "assets")), name="static_assets")
 
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404, detail="API route not found.")
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str = ""):
+    if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+        raise HTTPException(status_code=404, detail="API route not found.")
+    
+    index_file = dist_path / "index.html"
+    if full_path:
         file_target = dist_path / full_path
         if file_target.is_file():
             return FileResponse(file_target)
-        return FileResponse(dist_path / "index.html")
+            
+    if index_file.exists():
+        return FileResponse(index_file)
+        
+    return {
+        "name": "AgentGuard API",
+        "status": "running",
+        "version": "1.0.0",
+        "notice": "Frontend build files not found. Run 'npm run build'."
+    }
