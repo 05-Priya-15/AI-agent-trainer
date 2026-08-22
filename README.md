@@ -10,17 +10,17 @@ The project combines a **Python-based AI security engine** with a **React + Type
 
 ## Features
 
-* 🤖 AI-powered security scenario generation
-* 🛡️ AI-agent security testing
-* 🧪 Automated test execution
-* 📊 Security evaluation and scoring
-* 📝 Automated security reporting
-* ⚔️ Configurable attack/security scenarios
-* ⚛️ React + TypeScript frontend
-* ⚡ Vite development environment with HMR
-* 🔧 Modular Python AI engine
-* 🔐 Environment-variable based API configuration
-* ⚙️ GitHub Actions workflow support
+- 🤖 AI-powered security scenario generation
+- 🛡️ AI-agent security testing
+- 🧪 Automated test execution
+- 📊 Security evaluation and scoring
+- 📝 Automated security reporting
+- ⚔️ Configurable attack/security scenarios
+- ⚛️ React + TypeScript frontend
+- ⚡ Vite development environment with HMR
+- 🔧 Modular Python AI engine
+- 🔐 Environment-variable based API configuration
+- ⚙️ GitHub Actions workflow support
 
 ---
 
@@ -37,7 +37,7 @@ AgentGuard is organized into two primary layers:
                    │
 ┌──────────────────▼──────────────────┐
 │          AgentGuard Engine          │
-│              Python                │
+│              Python                 │
 ├─────────────────────────────────────┤
 │ Scenario Generator                  │
 │ Attack Types                        │
@@ -56,7 +56,7 @@ The frontend provides the user-facing application layer, while the Python AI eng
 ## Project Structure
 
 ```text
-AgentGuard/
+AI-agent-trainer/
 │
 ├── .github/
 │   └── workflows/
@@ -72,20 +72,31 @@ AgentGuard/
 │   ├── scenario_generator.py
 │   └── test_runner.py
 │
+├── public/
+│   ├── favicon.svg
+│   └── icons.svg
+│
+├── src/
+│   ├── assets/
+│   ├── App.tsx
+│   ├── App.css
+│   ├── index.css
+│   └── main.tsx
+│
 ├── reports/                    # Generated reports; ignored by Git
 │
 ├── .env                       # Local API credentials; not committed
 ├── .gitignore
+├── eslint.config.js
+├── index.html
 ├── main.py
+├── package.json
+├── package-lock.json
 ├── requirements.txt
-│
-└── frontend/                  # React + TypeScript + Vite application
-    ├── src/
-    ├── public/
-    ├── package.json
-    ├── tsconfig.json
-    ├── vite.config.ts
-    └── ...
+├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
+└── vite.config.ts
 ```
 
 > Adjust the frontend directory name if your React application is located somewhere other than `frontend/`.
