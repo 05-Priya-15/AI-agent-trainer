@@ -727,8 +727,6 @@ Only perform security testing against systems for which you have explicit author
 
 # License
 
-# License
-
 AgentGuard is licensed under the [MIT License](LICENSE).
 
 Copyright (c) 2026 05-Priya-15.
