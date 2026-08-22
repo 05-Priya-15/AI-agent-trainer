@@ -727,11 +727,11 @@ Only perform security testing against systems for which you have explicit author
 
 # License
 
-No license is currently specified for this repository.
+# License
 
-If the project is intended for public distribution, add an appropriate `LICENSE` file and update this section accordingly.
+AgentGuard is licensed under the [MIT License](LICENSE).
 
-Do not claim an open-source license unless the corresponding license file has been added to the repository.
+Copyright (c) 2026 05-Priya-15.
 
 ---
 
