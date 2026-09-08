@@ -10,10 +10,8 @@ import {
   Plus,
   ChevronRight,
   CheckCircle2,
-  XCircle,
   Clock3,
   Activity,
-  TrendingUp,
   Zap,
   Search,
   Bell,
@@ -28,181 +26,33 @@ import {
   Download,
 } from "lucide-react";
 import "./index.css";
-
-type TestStatus = "Passed" | "Failed" | "Running";
-type SeverityLevel = "Critical" | "High" | "Medium" | "Low";
-
-interface ApiEvaluation {
-  verdict: string;
-  score: number;
-  attack_detected: boolean;
-  followed_malicious_instruction: boolean;
-  leaked_sensitive_information: boolean;
-  reasoning: string;
-  recommendations: string[];
-}
-
-interface ApiAgentResult {
-  scenario_title: string;
-  attack_type: string;
-  risk_level: string;
-  agent_mode: string;
-  agent_response: string;
-  evaluation: ApiEvaluation;
-}
-
-interface ApiTestResult {
-  attack_type: string;
-  scenario: {
-    title: string;
-    description: string;
-    risk_level: string;
-    attack_type: string;
-    attack_payload: string;
-    expected_behavior: string;
-  };
-  secure_result: ApiAgentResult;
-  vulnerable_result: ApiAgentResult;
-}
-
-interface SuiteResponse {
-  success: boolean;
-  suite_id?: string;
-  total_tests: number;
-  results: ApiTestResult[];
-}
-
-interface Test {
-  id: number;
-  name: string;
-  category: string;
-  severity: SeverityLevel;
-  status: TestStatus;
-  duration: string;
-}
-
-interface Failure {
-  title: string;
-  severity: SeverityLevel;
-  description: string;
-  trace: string[];
-  reasoning: string;
-  recommendations: string[];
-}
-
-interface AgentData {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  agent_type: string;
-  system_prompt: string;
-  endpoint_url?: string;
-  temperature: number;
-  is_default: number;
-}
-
-const ATTACKS = [
-  "prompt injection",
-  "jailbreak",
-  "sensitive data leakage",
-  "instruction hijacking",
-  "unauthorized tool request",
-];
-
-const API_BASE =
-  (import.meta as any).env?.VITE_API_URL ||
-  (typeof window !== "undefined" &&
-  (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1")
-    ? "http://127.0.0.1:8000"
-    : "");
-
-
-function normalizeSeverity(value: string): SeverityLevel {
-  const severity = (value || "").toLowerCase();
-  if (severity === "critical") return "Critical";
-  if (severity === "high") return "High";
-  if (severity === "medium") return "Medium";
-  return "Low";
-}
-
-function getTestsFromSuite(data: SuiteResponse | null): Test[] {
-  if (!data) return [];
-
-  return data.results.map((result, index) => {
-    const score = result.secure_result.evaluation.score;
-    return {
-      id: index + 1,
-      name: result.scenario.title,
-      category: result.attack_type,
-      severity: normalizeSeverity(result.scenario.risk_level),
-      status: score >= 70 ? "Passed" : "Failed",
-      duration: "1.2s",
-    };
-  });
-}
-
-function getFailuresFromSuite(data: SuiteResponse | null): Failure[] {
-  if (!data) return [];
-
-  return data.results
-    .filter(
-      (result) =>
-        result.vulnerable_result.evaluation.score < 70 ||
-        result.vulnerable_result.evaluation.verdict.toLowerCase() === "fail"
-    )
-    .map((result) => {
-      const evaluation = result.vulnerable_result.evaluation;
-      return {
-        title: result.scenario.title,
-        severity: normalizeSeverity(result.scenario.risk_level),
-        description: result.scenario.description,
-        trace: [
-          `Attack → ${result.scenario.attack_payload}`,
-          `Agent → ${result.vulnerable_result.agent_response}`,
-          `Expected → ${result.scenario.expected_behavior}`,
-        ],
-        reasoning: evaluation.reasoning,
-        recommendations: evaluation.recommendations,
-      };
-    });
-}
-
-function getSecureAverage(data: SuiteResponse | null): number {
-  if (!data || data.results.length === 0) return 0;
-  const total = data.results.reduce(
-    (sum, result) => sum + result.secure_result.evaluation.score,
-    0
-  );
-  return Math.round(total / data.results.length);
-}
-
-function getVulnerableAverage(data: SuiteResponse | null): number {
-  if (!data || data.results.length === 0) return 0;
-  const total = data.results.reduce(
-    (sum, result) => sum + result.vulnerable_result.evaluation.score,
-    0
-  );
-  return Math.round(total / data.results.length);
-}
-
-function getCriticalFailures(data: SuiteResponse | null): number {
-  if (!data) return 0;
-  return data.results.filter(
-    (result) =>
-      normalizeSeverity(result.scenario.risk_level) === "Critical" &&
-      result.vulnerable_result.evaluation.score < 70
-  ).length;
-}
-
-function getDetectionRate(data: SuiteResponse | null): number {
-  if (!data || data.results.length === 0) return 0;
-  const detected = data.results.filter(
-    (result) => result.vulnerable_result.evaluation.attack_detected
-  ).length;
-  return Math.round((detected / data.results.length) * 100);
-}
+import { ATTACKS, API_BASE } from "./constants";
+import type {
+  AgentData,
+  ApiTestResult,
+  GeneratedScenario,
+  SuiteResponse,
+} from "./types";
+import {
+  getCriticalFailures,
+  getDetectionRate,
+  getFailuresFromSuite,
+  getSecureAverage,
+  getTestsFromSuite,
+  getVulnerableAverage,
+} from "./utils";
+import {
+  CategoryBar,
+  EmptyState,
+  ErrorBox,
+  FailureViewer,
+  HealthItem,
+  Metric,
+  NavItem,
+  StatCard,
+  Status,
+  TestTable,
+} from "./components/ui";
 
 function App() {
   const [activePage, setActivePage] = useState("Dashboard");
@@ -221,29 +71,28 @@ function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [showScenarioModal, setShowScenarioModal] = useState(false);
-  const [generatedScenario, setGeneratedScenario] = useState<any>(null);
+  const [generatedScenario, setGeneratedScenario] =
+    useState<GeneratedScenario | null>(null);
   const [generatingScenario, setGeneratingScenario] = useState(false);
   const [selectedAttackForGen, setSelectedAttackForGen] = useState("prompt injection");
 
-  // Fetch agents from database on load
-  const fetchAgents = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/agents`);
-      if (res.ok) {
-        const data = await res.json();
-        setAgents(data.agents || []);
-        if (data.agents && data.agents.length > 0 && !selectedAgent) {
-          setSelectedAgent(data.agents[0]);
-        }
-      }
-    } catch (err) {
-      console.warn("Could not load agents from API:", err);
-    }
-  };
-
   useEffect(() => {
-    fetchAgents();
-  }, []);
+    const loadAgents = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/agents`);
+        if (res.ok) {
+          const data = await res.json();
+          setAgents(data.agents || []);
+          if (data.agents && data.agents.length > 0 && !selectedAgent) {
+            setSelectedAgent(data.agents[0]);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not load agents from API:", err);
+      }
+    };
+    void loadAgents();
+  }, [selectedAgent]);
 
   const runTests = async (agentId?: string) => {
     setRunning(true);
@@ -1557,7 +1406,10 @@ function SettingsPage({ suiteData }: { suiteData: SuiteResponse | null }) {
   };
 
   useEffect(() => {
-    checkApi();
+    const loadApiStatus = async () => {
+      await checkApi();
+    };
+    void loadApiStatus();
   }, []);
 
   const handleExportHtml = async () => {
@@ -1655,307 +1507,6 @@ function SettingsPage({ suiteData }: { suiteData: SuiteResponse | null }) {
         </div>
       </section>
     </div>
-  );
-}
-
-/* =========================================================
-   SHARED COMPONENTS
-========================================================= */
-
-function FailureViewer({
-  failures,
-  selectedFailure,
-  setSelectedFailure,
-  currentFailure,
-}: {
-  failures: Failure[];
-  selectedFailure: number;
-  setSelectedFailure: (index: number) => void;
-  currentFailure: Failure;
-}) {
-  return (
-    <div className="failure-grid">
-      <div className="failure-list card">
-        {failures.map((failure, index) => (
-          <button
-            key={`${failure.title}-${index}`}
-            className={`failure-item ${selectedFailure === index ? "selected" : ""}`}
-            onClick={() => setSelectedFailure(index)}
-          >
-            <div className="failure-icon">
-              <AlertTriangle size={17} />
-            </div>
-
-            <div className="failure-item-content">
-              <div className="failure-item-title">{failure.title}</div>
-              <div className="failure-item-subtitle">{failure.description}</div>
-              <Severity severity={failure.severity} />
-            </div>
-
-            <ChevronRight size={17} />
-          </button>
-        ))}
-      </div>
-
-      <div className="card trace-card">
-        <div className="trace-header">
-          <div>
-            <h3>{currentFailure.title}</h3>
-            <p>Execution trace</p>
-          </div>
-          <span className="critical-label">
-            {currentFailure.severity.toUpperCase()}
-          </span>
-        </div>
-
-        <div className="trace">
-          {currentFailure.trace.map((line, index) => {
-            const parts = line.split(" → ");
-            return (
-              <div className="trace-line" key={index}>
-                <span className="trace-number">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="trace-source">{parts[0]}</span>
-                <span className="trace-arrow">→</span>
-                <span className={index === currentFailure.trace.length - 1 ? "trace-danger" : ""}>
-                  {parts.slice(1).join(" → ")}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="ai-analysis">
-          <div className="ai-icon">
-            <Zap size={16} />
-          </div>
-          <div>
-            <strong>AI Analysis & Reasoning</strong>
-            <p>{currentFailure.reasoning}</p>
-
-            {currentFailure.recommendations.length > 0 && (
-              <div style={{ marginTop: "10px" }}>
-                <strong>Security Recommendations:</strong>
-                <ul>
-                  {currentFailure.recommendations.map((rec, index) => (
-                    <li key={index}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TestTable({ tests }: { tests: Test[] }) {
-  return (
-    <div className="table">
-      <div className="table-row table-head">
-        <div>Scenario</div>
-        <div>Category</div>
-        <div>Severity</div>
-        <div>Status</div>
-        <div>Duration</div>
-      </div>
-
-      {tests.map((test) => (
-        <div className="table-row" key={test.id}>
-          <div className="scenario-name">
-            <div className="scenario-icon">
-              <FlaskConical size={15} />
-            </div>
-            {test.name}
-          </div>
-
-          <div className="muted">{test.category}</div>
-          <div><Severity severity={test.severity} /></div>
-          <div><Status status={test.status} /></div>
-          <div className="muted">{test.duration}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
-function HealthItem({
-  icon,
-  title,
-  value,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string;
-}) {
-  return (
-    <div className="health-item">
-      <div className="health-icon">{icon}</div>
-      <div>
-        <span>{title}</span>
-        <strong>{value}</strong>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="card" style={{ padding: "40px", textAlign: "center" }}>
-      <div style={{ marginBottom: "12px", opacity: 0.7 }}>{icon}</div>
-      <h3>{title}</h3>
-      <p>{description}</p>
-    </div>
-  );
-}
-
-function ErrorBox({ message }: { message: string }) {
-  return (
-    <div
-      style={{
-        padding: "16px",
-        marginBottom: "20px",
-        borderRadius: "12px",
-        background: "rgba(239, 68, 68, 0.12)",
-        color: "#ef4444",
-        border: "1px solid rgba(239, 68, 68, 0.3)",
-      }}
-    >
-      <strong>Test Suite Error:</strong> {message}
-    </div>
-  );
-}
-
-function NavItem({
-  icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className={`nav-item ${active ? "active" : ""}`}
-      onClick={onClick}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  suffix,
-  trend,
-  trendPositive,
-  color,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  suffix: string;
-  trend: string;
-  trendPositive: boolean;
-  color: string;
-}) {
-  return (
-    <div className="card stat-card">
-      <div className={`stat-icon ${color}`}>{icon}</div>
-      <div className="stat-label">{label}</div>
-      <div className="stat-value">
-        {value}
-        <small>{suffix}</small>
-      </div>
-      <div className={`stat-trend ${trendPositive ? "positive" : ""}`}>
-        <TrendingUp size={13} />
-        {trend}
-      </div>
-    </div>
-  );
-}
-
-function CategoryBar({
-  label,
-  score,
-  color,
-}: {
-  label: string;
-  score: number;
-  color: string;
-}) {
-  return (
-    <div className="category">
-      <div className="category-top">
-        <span>{label}</span>
-        <strong>{score}</strong>
-      </div>
-      <div className="progress">
-        <div
-          className={`progress-fill ${color}`}
-          style={{ width: `${score}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function Severity({ severity }: { severity: SeverityLevel }) {
-  return (
-    <span className={`severity ${severity.toLowerCase()}`}>
-      <span />
-      {severity}
-    </span>
-  );
-}
-
-function Status({ status }: { status: TestStatus }) {
-  if (status === "Passed") {
-    return (
-      <span className="test-status passed">
-        <CheckCircle2 size={15} />
-        Passed
-      </span>
-    );
-  }
-  if (status === "Failed") {
-    return (
-      <span className="test-status failed">
-        <XCircle size={15} />
-        Failed
-      </span>
-    );
-  }
-  return (
-    <span className="test-status running-status">
-      <Activity size={15} />
-      Not Run
-    </span>
   );
 }
 

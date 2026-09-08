@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from google import genai
 from google.genai import types
 
+from ai_engine.config import get_runtime_settings
 from ai_engine.attack_types import (
     ALL_ATTACK_KEYS,
     ATTACK_CATALOG,
@@ -44,8 +45,10 @@ from ai_engine.agent_runner import AgentRunner
 
 load_dotenv()
 
-MODEL_NAME = os.getenv("MODEL_NAME", "gemini-3.6-flash")
-TIMEOUT_MS = 30000
+runtime_settings = get_runtime_settings()
+MODEL_NAME = runtime_settings["model_name"]
+TIMEOUT_MS = runtime_settings["timeout_ms"]
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # ============================================================
 # FASTAPI APPLICATION
@@ -73,17 +76,17 @@ app.add_middleware(
 # CLIENT & ENGINE INITIALIZATION
 # ============================================================
 
-api_key = os.getenv("GEMINI_API_KEY")
-
 client = None
-if api_key:
+if GEMINI_API_KEY:
     try:
         client = genai.Client(
-            api_key=api_key,
+            api_key=GEMINI_API_KEY,
             http_options=types.HttpOptions(timeout=TIMEOUT_MS),
         )
     except Exception as exc:
         print(f"[AgentGuard] Warning: Error initializing Gemini Client: {exc}")
+else:
+    print(f"[AgentGuard] Warning: {runtime_settings['warning']}")
 
 generator = ScenarioGenerator(client=client, model=MODEL_NAME)
 runner = AgentGuardTestRunner(client=client, model=MODEL_NAME)
@@ -122,6 +125,8 @@ def api_root():
         "status": "running",
         "version": "1.0.0",
         "model": MODEL_NAME,
+        "gemini_configured": bool(GEMINI_API_KEY),
+        "warning": runtime_settings["warning"],
         "features": [
             "Adversarial Security Evaluation",
             "Active Guardrail Shield Proxy",
@@ -137,10 +142,11 @@ def api_root():
 def health():
     return {
         "status": "healthy",
-        "gemini_configured": client is not None,
+        "gemini_configured": bool(GEMINI_API_KEY) and client is not None,
         "model": MODEL_NAME,
         "database": "connected",
         "total_agents": len(list_agents()),
+        "warning": runtime_settings["warning"],
     }
 
 
@@ -442,19 +448,19 @@ if (dist_path / "assets").exists():
 async def serve_spa(full_path: str = ""):
     if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
         raise HTTPException(status_code=404, detail="API route not found.")
-    
+
     index_file = dist_path / "index.html"
     if full_path:
         file_target = dist_path / full_path
         if file_target.is_file():
             return FileResponse(file_target)
-            
+
     if index_file.exists():
         return FileResponse(index_file)
-        
+
     return {
         "name": "AgentGuard API",
         "status": "running",
         "version": "1.0.0",
         "notice": "Frontend build files not found. Run 'npm run build'."
-    }
+    }
